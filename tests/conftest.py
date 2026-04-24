@@ -12,12 +12,12 @@ _BACKEND = os.path.join(os.path.dirname(__file__), "..", "backend")
 if _BACKEND not in sys.path:
     sys.path.insert(0, _BACKEND)
 
-import app as flask_app  # type: ignore[import-not-found]  # resolved via sys.path
-
 
 @pytest.fixture(scope="session")
 def app():
     """Create a Flask test application backed by a temp SQLite database."""
+    import app as flask_app  # type: ignore[import-not-found]  # resolved via sys.path
+
     fd, db_path = tempfile.mkstemp(suffix=".db")
     os.close(fd)
 
