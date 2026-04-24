@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QA Dashboard — QA Forge</title>
+  <meta name="description" content="QA Forge Test Results Dashboard — live aggregated view of all software testing layers." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- HERO HEADER                                  -->
+  <!-- ══════════════════════════════════════════════ -->
+  <header class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <div class="hero-badge">🧪 Software Testing Showcase</div>
+      <h1 class="hero-title">QA <span class="gradient-text">Forge</span></h1>
+      <p class="hero-subtitle">A comprehensive quality assurance portfolio demonstrating<br/>all critical testing layers on a real-world application.</p>
+      <div class="hero-meta">
+        <span class="meta-chip">⚗️ System Under Test: Task Manager API</span>
+        <span class="meta-chip">🐍 Python · Flask · SQLite</span>
+        <span class="meta-chip">🎭 Playwright · Locust · Bandit</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- OVERALL SCORE BANNER                         -->
+  <!-- ══════════════════════════════════════════════ -->
+  <section class="score-banner">
+    <div class="score-ring-wrap">
+      <canvas id="score-ring" width="120" height="120"></canvas>
+      <div class="score-center">
+        <span class="score-num" id="overall-score">—</span>
+        <span class="score-lbl">Quality Score</span>
+      </div>
+    </div>
+    <div class="score-stats">
+      <div class="ss-item">
+        <span class="ss-num" id="total-tests">0</span>
+        <span class="ss-lbl">Total Tests</span>
+      </div>
+      <div class="ss-item">
+        <span class="ss-num green" id="passed-tests">0</span>
+        <span class="ss-lbl">Passed</span>
+      </div>
+      <div class="ss-item">
+        <span class="ss-num red" id="failed-tests">0</span>
+        <span class="ss-lbl">Failed</span>
+      </div>
+      <div class="ss-item">
+        <span class="ss-num purple" id="coverage-pct">—</span>
+        <span class="ss-lbl">Coverage</span>
+      </div>
+    </div>
+    <div class="score-verdict" id="verdict">
+      <div class="verdict-icon">⏳</div>
+      <div class="verdict-text">Run the test suite to see results</div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- TESTING LAYERS GRID                          -->
+  <!-- ══════════════════════════════════════════════ -->
+  <section class="layers-section">
+    <h2 class="section-title">Testing Layers</h2>
+    <div class="layers-grid" id="layers-grid">
+
+      <!-- Unit Tests -->
+      <div class="layer-card" data-layer="unit">
+        <div class="layer-icon">🔬</div>
+        <div class="layer-info">
+          <h3>Unit Testing</h3>
+          <p>Pytest · 60+ test cases · Parameterized batteries</p>
+          <div class="layer-tags">
+            <span class="ltag">Boundary Analysis</span>
+            <span class="ltag">Equivalence Partitioning</span>
+            <span class="ltag">Mocking</span>
+          </div>
+        </div>
+        <div class="layer-status">
+          <div class="status-dot pending" id="unit-dot"></div>
+          <span class="layer-pass-count" id="unit-count">—</span>
+        </div>
+        <div class="layer-bar-wrap">
+          <div class="layer-bar" id="unit-bar" style="width:0%"></div>
+        </div>
+      </div>
+
+      <!-- Integration Tests -->
+      <div class="layer-card" data-layer="integration">
+        <div class="layer-icon">🔗</div>
+        <div class="layer-info">
+          <h3>Integration Testing</h3>
+          <p>Flask test client · Full API contract coverage</p>
+          <div class="layer-tags">
+            <span class="ltag">CRUD Endpoints</span>
+            <span class="ltag">Auth Flows</span>
+            <span class="ltag">Error Handling</span>
+          </div>
+        </div>
+        <div class="layer-status">
+          <div class="status-dot pending" id="integration-dot"></div>
+          <span class="layer-pass-count" id="integration-count">—</span>
+        </div>
+        <div class="layer-bar-wrap">
+          <div class="layer-bar" id="integration-bar" style="width:0%"></div>
+        </div>
+      </div>
+
+      <!-- E2E Tests -->
+      <div class="layer-card" data-layer="e2e">
+        <div class="layer-icon">🖥️</div>
+        <div class="layer-info">
+          <h3>End-to-End Testing</h3>
+          <p>Playwright · Full browser automation</p>
+          <div class="layer-tags">
+            <span class="ltag">User Journeys</span>
+            <span class="ltag">Cross-Browser</span>
+            <span class="ltag">Screenshot on Fail</span>
+          </div>
+        </div>
+        <div class="layer-status">
+          <div class="status-dot pending" id="e2e-dot"></div>
+          <span class="layer-pass-count" id="e2e-count">—</span>
+        </div>
+        <div class="layer-bar-wrap">
+          <div class="layer-bar" id="e2e-bar" style="width:0%"></div>
+        </div>
+      </div>
+
+      <!-- Performance Tests -->
+      <div class="layer-card" data-layer="performance">
+        <div class="layer-icon">⚡</div>
+        <div class="layer-info">
+          <h3>Performance Testing</h3>
+          <p>Locust · Load / stress simulation</p>
+          <div class="layer-tags">
+            <span class="ltag">50 Concurrent Users</span>
+            <span class="ltag">Response Times</span>
+            <span class="ltag">Failure Rates</span>
+          </div>
+        </div>
+        <div class="layer-status">
+          <div class="status-dot pending" id="perf-dot"></div>
+          <span class="layer-pass-count" id="perf-count">—</span>
+        </div>
+        <div class="layer-bar-wrap">
+          <div class="layer-bar" id="perf-bar" style="width:0%"></div>
+        </div>
+      </div>
+
+      <!-- Security Tests -->
+      <div class="layer-card" data-layer="security">
+        <div class="layer-icon">🔐</div>
+        <div class="layer-info">
+          <h3>Security Testing</h3>
+          <p>OWASP checks · Bandit static analysis</p>
+          <div class="layer-tags">
+            <span class="ltag">SQL Injection</span>
+            <span class="ltag">XSS Prevention</span>
+            <span class="ltag">Auth Bypass</span>
+          </div>
+        </div>
+        <div class="layer-status">
+          <div class="status-dot pending" id="security-dot"></div>
+          <span class="layer-pass-count" id="security-count">—</span>
+        </div>
+        <div class="layer-bar-wrap">
+          <div class="layer-bar" id="security-bar" style="width:0%"></div>
+        </div>
+      </div>
+
+      <!-- Accessibility Tests -->
+      <div class="layer-card" data-layer="accessibility">
+        <div class="layer-icon">♿</div>
+        <div class="layer-info">
+          <h3>Accessibility Testing</h3>
+          <p>Pa11y · WCAG 2.1 AA compliance</p>
+          <div class="layer-tags">
+            <span class="ltag">Color Contrast</span>
+            <span class="ltag">Keyboard Nav</span>
+            <span class="ltag">Screen Reader</span>
+          </div>
+        </div>
+        <div class="layer-status">
+          <div class="status-dot pending" id="a11y-dot"></div>
+          <span class="layer-pass-count" id="a11y-count">—</span>
+        </div>
+        <div class="layer-bar-wrap">
+          <div class="layer-bar" id="a11y-bar" style="width:0%"></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- CHARTS ROW                                   -->
+  <!-- ══════════════════════════════════════════════ -->
+  <section class="charts-section">
+    <div class="chart-card">
+      <h3 class="chart-title">Test Distribution</h3>
+      <canvas id="dist-chart" height="220"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3 class="chart-title">Pass Rate by Layer</h3>
+      <canvas id="pass-chart" height="220"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3 class="chart-title">Code Coverage</h3>
+      <canvas id="cov-chart" height="220"></canvas>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- TEST METHODOLOGY TABLE                       -->
+  <!-- ══════════════════════════════════════════════ -->
+  <section class="method-section">
+    <h2 class="section-title">Testing Strategy &amp; Methodology</h2>
+    <div class="method-table-wrap">
+      <table class="method-table">
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Tool</th>
+            <th>Tests Written</th>
+            <th>Coverage Scope</th>
+            <th>Key Technique</th>
+            <th>Report</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="tl-icon">🔬</span> Unit</td>
+            <td><code>Pytest + pytest-cov</code></td>
+            <td>60+</td>
+            <td>Business logic, validation, utilities</td>
+            <td>Boundary value analysis, equivalence partitioning, parametrize</td>
+            <td><a href="../reports/unit_report.html" class="report-link">HTML Report</a></td>
+          </tr>
+          <tr>
+            <td><span class="tl-icon">🔗</span> Integration</td>
+            <td><code>Pytest + Flask TestClient</code></td>
+            <td>40+</td>
+            <td>All REST endpoints, auth flows</td>
+            <td>API contract testing, fixture-based state, ownership isolation</td>
+            <td><a href="../reports/integration_report.html" class="report-link">HTML Report</a></td>
+          </tr>
+          <tr>
+            <td><span class="tl-icon">🖥️</span> End-to-End</td>
+            <td><code>Playwright (Python)</code></td>
+            <td>15+</td>
+            <td>Full user journeys in browser</td>
+            <td>Page Object patterns, cross-browser, screenshot on failure</td>
+            <td><a href="../reports/e2e_report.html" class="report-link">HTML Report</a></td>
+          </tr>
+          <tr>
+            <td><span class="tl-icon">⚡</span> Performance</td>
+            <td><code>Locust</code></td>
+            <td>Load scenarios</td>
+            <td>50 concurrent users, 60s sustained</td>
+            <td>Realistic user behavior simulation, weighted task distribution</td>
+            <td><a href="../reports/performance_report.html" class="report-link">HTML Report</a></td>
+          </tr>
+          <tr>
+            <td><span class="tl-icon">🔐</span> Security</td>
+            <td><code>Pytest + Bandit</code></td>
+            <td>30+</td>
+            <td>OWASP Top-10 applicable checks</td>
+            <td>SQL injection, XSS, auth bypass, none-algorithm exploit, DoS</td>
+            <td><a href="../reports/security_report.html" class="report-link">HTML Report</a></td>
+          </tr>
+          <tr>
+            <td><span class="tl-icon">♿</span> Accessibility</td>
+            <td><code>Pa11y + axe-core</code></td>
+            <td>WCAG 2.1 AA</td>
+            <td>All UI pages</td>
+            <td>Screen reader, color contrast, keyboard navigation, labels</td>
+            <td><a href="../reports/a11y_report.html" class="report-link">HTML Report</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- QUICK-RUN GUIDE                              -->
+  <!-- ══════════════════════════════════════════════ -->
+  <section class="run-section">
+    <h2 class="section-title">Run Everything in One Command</h2>
+    <div class="run-card">
+      <div class="run-step">
+        <span class="step-num">1</span>
+        <div class="step-content">
+          <h4>Install dependencies</h4>
+          <pre><code>cd backend &amp;&amp; pip install -r requirements.txt
+playwright install chromium</code></pre>
+        </div>
+      </div>
+      <div class="run-step">
+        <span class="step-num">2</span>
+        <div class="step-content">
+          <h4>Start the backend API</h4>
+          <pre><code>python backend/app.py</code></pre>
+        </div>
+      </div>
+      <div class="run-step">
+        <span class="step-num">3</span>
+        <div class="step-content">
+          <h4>Run the full test suite</h4>
+          <pre><code>bash run_all_tests.sh</code></pre>
+        </div>
+      </div>
+      <div class="run-step">
+        <span class="step-num">4</span>
+        <div class="step-content">
+          <h4>View this dashboard</h4>
+          <pre><code>open qa_dashboard/index.html</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- FOOTER                                       -->
+  <!-- ══════════════════════════════════════════════ -->
+  <footer class="footer">
+    <p>⚗️ <strong>QA Forge</strong> · Software Testing Portfolio Project</p>
+    <p class="footer-sub">Built to demonstrate comprehensive testing methodology across all quality assurance layers</p>
+  </footer>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+name: QA Forge — Full Test Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────
+  # Job 1: Unit + Integration + Security Tests
+  # ──────────────────────────────────────────────────────────────────
+  unit-integration-security:
+    name: "🔬 Unit · 🔗 Integration · 🔐 Security"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r backend/requirements.txt
+
+      - name: "🔬 Unit Tests + Coverage"
+        run: |
+          pytest tests/unit/ \
+            --cov=backend/models \
+            --cov=backend/app \
+            --cov-report=xml:reports/coverage.xml \
+            --cov-report=html:reports/coverage_html \
+            --cov-fail-under=75 \
+            --html=reports/unit_report.html \
+            --self-contained-html \
+            -v
+        working-directory: ${{ github.workspace }}
+
+      - name: "🔗 Integration Tests"
+        run: |
+          pytest tests/integration/ \
+            --html=reports/integration_report.html \
+            --self-contained-html \
+            -v
+
+      - name: "🔐 Security Tests (OWASP)"
+        run: |
+          pytest tests/security/ \
+            --html=reports/security_report.html \
+            --self-contained-html \
+            -v
+
+      - name: "🔐 Bandit Static Analysis"
+        run: |
+          pip install bandit
+          bandit -r backend/ -ll --exit-zero -f txt -o reports/bandit_report.txt
+          cat reports/bandit_report.txt
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports-core
+          path: reports/
+          retention-days: 30
+
+  # ──────────────────────────────────────────────────────────────────
+  # Job 2: End-to-End Tests (Playwright)
+  # ──────────────────────────────────────────────────────────────────
+  e2e:
+    name: "🖥️ End-to-End (Playwright)"
+    runs-on: ubuntu-latest
+    needs: unit-integration-security
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Python dependencies
+        run: pip install -r backend/requirements.txt
+
+      - name: Install Playwright browsers
+        run: playwright install --with-deps chromium
+
+      - name: Start backend API
+        run: |
+          python backend/app.py &
+          sleep 3
+          curl -f http://localhost:5050/health || (echo "Backend failed to start" && exit 1)
+        env:
+          FLASK_ENV: testing
+
+      - name: Serve frontend
+        run: |
+          python -m http.server 8080 --directory frontend &
+          sleep 2
+
+      - name: "🖥️ Run E2E Tests"
+        run: |
+          pytest tests/e2e/ \
+            --html=reports/e2e_report.html \
+            --self-contained-html \
+            -v
+
+      - name: Upload E2E artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-reports
+          path: reports/
+          retention-days: 14
+
+  # ──────────────────────────────────────────────────────────────────
+  # Job 3: Performance Tests (Locust, short run in CI)
+  # ──────────────────────────────────────────────────────────────────
+  performance:
+    name: "⚡ Performance (Locust)"
+    runs-on: ubuntu-latest
+    needs: unit-integration-security
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies (incl. Locust)
+        run: pip install -r backend/requirements.txt
+
+      - name: Start backend API
+        run: |
+          python backend/app.py &
+          sleep 3
+
+      - name: "⚡ Run Load Test (20 users, 20s)"
+        run: |
+          mkdir -p reports
+          locust -f tests/performance/locustfile.py \
+            --headless \
+            -u 20 -r 5 -t 20s \
+            --host http://localhost:5050 \
+            --html reports/performance_report.html \
+            --exit-code-on-error 1
+
+      - name: Upload performance report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-report
+          path: reports/performance_report.html
+          retention-days: 14
+
+  # ──────────────────────────────────────────────────────────────────
+  # Job 4: Quality Gate — fail PR if core tests fail
+  # ──────────────────────────────────────────────────────────────────
+  quality-gate:
+    name: "🚦 Quality Gate"
+    runs-on: ubuntu-latest
+    needs: [unit-integration-security, e2e, performance]
+    if: always()
+
+    steps:
+      - name: Evaluate quality gate
+        run: |
+          echo "Unit + Integration + Security: ${{ needs.unit-integration-security.result }}"
+          echo "E2E:                           ${{ needs.e2e.result }}"
+          echo "Performance:                   ${{ needs.performance.result }}"
+
+          if [[ "${{ needs.unit-integration-security.result }}" != "success" ]]; then
+            echo "❌ Core tests failed — blocking merge"
+            exit 1
+          fi
+          echo "✅ Quality gate passed"

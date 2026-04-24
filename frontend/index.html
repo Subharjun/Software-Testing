@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QA Forge</title>
+  <meta name="description" content="QA Forge — Task Manager. A full-stack application showcasing comprehensive software testing practices." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- LOGIN SECTION                                -->
+  <!-- ══════════════════════════════════════════════ -->
+  <section id="login-section" class="login-overlay">
+    <div class="login-card glass-card">
+      <div class="logo">
+        <span class="logo-icon">⚗️</span>
+        <div>
+          <h1 class="logo-title">QA Forge</h1>
+          <p class="logo-sub">Task Manager · Testing Showcase</p>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input id="username" type="text" placeholder="tester" autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <p id="auth-error" class="error-msg hidden" role="alert"></p>
+      <button id="login-btn" class="btn btn-primary btn-full">Sign In</button>
+      <p class="login-hint">Demo credentials: <code>tester / tester123</code> or <code>admin / admin123</code></p>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- MAIN DASHBOARD                               -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div id="dashboard" class="hidden">
+
+    <!-- Top navbar -->
+    <nav class="navbar">
+      <div class="nav-brand">
+        <span class="logo-icon">⚗️</span>
+        <span class="nav-title">QA Forge</span>
+      </div>
+      <div class="nav-actions">
+        <a href="../qa_dashboard/index.html" class="btn btn-ghost" target="_blank">📊 Test Dashboard</a>
+        <span id="nav-username" class="nav-user"></span>
+        <button id="logout-btn" class="btn btn-ghost">Sign Out</button>
+      </div>
+    </nav>
+
+    <!-- Stats bar -->
+    <div class="stats-bar">
+      <div class="stat-card" id="stat-total">
+        <span class="stat-number">0</span>
+        <span class="stat-label">Total Tasks</span>
+      </div>
+      <div class="stat-card" id="stat-todo">
+        <span class="stat-number">0</span>
+        <span class="stat-label">To Do</span>
+      </div>
+      <div class="stat-card" id="stat-progress">
+        <span class="stat-number">0</span>
+        <span class="stat-label">In Progress</span>
+      </div>
+      <div class="stat-card" id="stat-done">
+        <span class="stat-number">0</span>
+        <span class="stat-label">Done</span>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-bar">
+      <input id="search-input" type="search" placeholder="🔍 Search tasks…" class="search-input" />
+      <select id="status-filter" class="filter-select">
+        <option value="">All Statuses</option>
+        <option value="todo">To Do</option>
+        <option value="in_progress">In Progress</option>
+        <option value="done">Done</option>
+        <option value="archived">Archived</option>
+      </select>
+      <select id="priority-filter" class="filter-select">
+        <option value="">All Priorities</option>
+        <option value="critical">Critical</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+      <button id="add-task-btn" class="btn btn-primary">+ New Task</button>
+    </div>
+
+    <!-- Task list -->
+    <main class="task-container">
+      <div id="task-list" class="task-grid">
+        <div class="loading-spinner">Loading tasks…</div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- TASK MODAL                                   -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div id="task-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal glass-card">
+      <div class="modal-header">
+        <h2 id="modal-title">New Task</h2>
+        <button id="close-modal-btn" class="btn btn-icon" aria-label="Close modal">✕</button>
+      </div>
+      <div class="form-group">
+        <label for="task-title-input">Title <span class="required">*</span></label>
+        <input id="task-title-input" type="text" placeholder="What needs to be done?" maxlength="120" />
+      </div>
+      <div class="form-group">
+        <label for="task-desc-input">Description</label>
+        <textarea id="task-desc-input" placeholder="Optional details…" rows="3" maxlength="1000"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="task-status-input">Status</label>
+          <select id="task-status-input">
+            <option value="todo">To Do</option>
+            <option value="in_progress">In Progress</option>
+            <option value="done">Done</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="task-priority-input">Priority</label>
+          <select id="task-priority-input">
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="task-due-input">Due Date</label>
+          <input id="task-due-input" type="date" />
+        </div>
+        <div class="form-group">
+          <label for="task-tags-input">Tags (comma separated)</label>
+          <input id="task-tags-input" type="text" placeholder="e.g. backend, qa, urgent" />
+        </div>
+      </div>
+      <p id="modal-error" class="error-msg hidden" role="alert"></p>
+      <div class="modal-footer">
+        <button id="cancel-task-btn" class="btn btn-ghost">Cancel</button>
+        <button id="save-task-btn" class="btn btn-primary">Save Task</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
