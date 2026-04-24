@@ -8,9 +8,9 @@ on:
 
 jobs:
   # ──────────────────────────────────────────────────────────────────
-  # Job 1: Unit + Integration + Security Tests
+  # Job 1: Unit + Integration + Security (combined — mirrors local run)
   # ──────────────────────────────────────────────────────────────────
-  unit-integration-security:
+  core-tests:
     name: "🔬 Unit · 🔗 Integration · 🔐 Security"
     runs-on: ubuntu-latest
 
@@ -29,29 +29,15 @@ jobs:
       - name: Create reports directory
         run: mkdir -p reports
 
-      - name: "🔬 Unit Tests + Coverage"
+      - name: "🔬🔗🔐 Run Core Tests with Coverage"
         run: |
-          pytest tests/unit/ \
+          pytest tests/unit/ tests/integration/ tests/security/ \
             --cov=backend \
             --cov-report=xml:reports/coverage.xml \
             --cov-report=html:reports/coverage_html \
             --cov-report=term-missing \
             --cov-fail-under=75 \
-            --html=reports/unit_report.html \
-            --self-contained-html \
-            -v
-
-      - name: "🔗 Integration Tests"
-        run: |
-          pytest tests/integration/ \
-            --html=reports/integration_report.html \
-            --self-contained-html \
-            -v
-
-      - name: "🔐 Security Tests (OWASP)"
-        run: |
-          pytest tests/security/ \
-            --html=reports/security_report.html \
+            --html=reports/core_tests_report.html \
             --self-contained-html \
             -v
 
@@ -74,7 +60,7 @@ jobs:
   e2e:
     name: "🖥️ End-to-End (Playwright)"
     runs-on: ubuntu-latest
-    needs: unit-integration-security
+    needs: core-tests
 
     steps:
       - uses: actions/checkout@v4
@@ -96,8 +82,6 @@ jobs:
           python backend/app.py &
           sleep 3
           curl -f http://localhost:5050/health || (echo "Backend failed to start" && exit 1)
-        env:
-          FLASK_ENV: testing
 
       - name: Serve frontend
         run: |
@@ -123,12 +107,12 @@ jobs:
           retention-days: 14
 
   # ──────────────────────────────────────────────────────────────────
-  # Job 3: Performance Tests (Locust, short run in CI)
+  # Job 3: Performance Tests (Locust)
   # ──────────────────────────────────────────────────────────────────
   performance:
     name: "⚡ Performance (Locust)"
     runs-on: ubuntu-latest
-    needs: unit-integration-security
+    needs: core-tests
 
     steps:
       - uses: actions/checkout@v4
@@ -174,17 +158,17 @@ jobs:
   quality-gate:
     name: "🚦 Quality Gate"
     runs-on: ubuntu-latest
-    needs: [unit-integration-security, e2e, performance]
+    needs: [core-tests, e2e, performance]
     if: always()
 
     steps:
       - name: Evaluate quality gate
         run: |
-          echo "Unit + Integration + Security: ${{ needs.unit-integration-security.result }}"
-          echo "E2E:                           ${{ needs.e2e.result }}"
-          echo "Performance:                   ${{ needs.performance.result }}"
+          echo "Core tests (Unit+Integration+Security): ${{ needs.core-tests.result }}"
+          echo "E2E:                                    ${{ needs.e2e.result }}"
+          echo "Performance:                            ${{ needs.performance.result }}"
 
-          if [[ "${{ needs.unit-integration-security.result }}" != "success" ]]; then
+          if [[ "${{ needs.core-tests.result }}" != "success" ]]; then
             echo "❌ Core tests failed — blocking merge"
             exit 1
           fi
