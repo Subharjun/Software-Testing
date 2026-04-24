@@ -17,27 +17,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: pip
 
       - name: Install dependencies
-        run: pip install -r backend/requirements.txt
+        run: pip install --prefer-binary -r backend/requirements.txt
+
+      - name: Create reports directory
+        run: mkdir -p reports
 
       - name: "🔬 Unit Tests + Coverage"
         run: |
           pytest tests/unit/ \
-            --cov=backend/models \
-            --cov=backend/app \
+            --cov=backend \
             --cov-report=xml:reports/coverage.xml \
             --cov-report=html:reports/coverage_html \
+            --cov-report=term-missing \
             --cov-fail-under=75 \
             --html=reports/unit_report.html \
             --self-contained-html \
             -v
-        working-directory: ${{ github.workspace }}
 
       - name: "🔗 Integration Tests"
         run: |
@@ -55,7 +57,6 @@ jobs:
 
       - name: "🔐 Bandit Static Analysis"
         run: |
-          pip install bandit
           bandit -r backend/ -ll --exit-zero -f txt -o reports/bandit_report.txt
           cat reports/bandit_report.txt
 
@@ -78,14 +79,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: pip
 
       - name: Install Python dependencies
-        run: pip install -r backend/requirements.txt
+        run: pip install --prefer-binary -r backend/requirements.txt
 
       - name: Install Playwright browsers
         run: playwright install --with-deps chromium
@@ -102,6 +103,9 @@ jobs:
         run: |
           python -m http.server 8080 --directory frontend &
           sleep 2
+
+      - name: Create reports directory
+        run: mkdir -p reports
 
       - name: "🖥️ Run E2E Tests"
         run: |
@@ -129,23 +133,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: pip
 
-      - name: Install dependencies (incl. Locust)
-        run: pip install -r backend/requirements.txt
+      - name: Install dependencies
+        run: pip install --prefer-binary -r backend/requirements.txt
 
       - name: Start backend API
         run: |
           python backend/app.py &
           sleep 3
+          curl -f http://localhost:5050/health
+
+      - name: Create reports directory
+        run: mkdir -p reports
 
       - name: "⚡ Run Load Test (20 users, 20s)"
         run: |
-          mkdir -p reports
           locust -f tests/performance/locustfile.py \
             --headless \
             -u 20 -r 5 -t 20s \
@@ -162,7 +169,7 @@ jobs:
           retention-days: 14
 
   # ──────────────────────────────────────────────────────────────────
-  # Job 4: Quality Gate — fail PR if core tests fail
+  # Job 4: Quality Gate
   # ──────────────────────────────────────────────────────────────────
   quality-gate:
     name: "🚦 Quality Gate"
